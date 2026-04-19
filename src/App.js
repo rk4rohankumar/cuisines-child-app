@@ -1,77 +1,138 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
-import 'tailwindcss/tailwind.css';
+import "tailwindcss/tailwind.css";
+import Loader from "./components/Loader";
+import ErrorState from "./components/ErrorState";
+import EmptyState from "./components/EmptyState";
+import MealCard from "./components/MealCard";
+import MealModal from "./components/MealModal";
+import useDebouncedValue from "./hooks/useDebouncedValue";
 
-const Loader = () => {
-  return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <motion.div
-        className="w-16 h-16 border-4 border-t-red-500 border-gray-300 rounded-full animate-spin"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, repeat: Infinity }}
-      ></motion.div>
-      <p className="text-lg font-semibold text-gray-700 mt-4">Fetching cuisines...</p>
-    </div>
-  );
-};
+const API_BASE = "https://www.themealdb.com/api/json/v1/1";
+const DEFAULT_CATEGORY = "Seafood";
 
 const CuisinesPage = () => {
+  const [categories, setCategories] = useState([]);
+  const [category, setCategory] = useState(DEFAULT_CATEGORY);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 300);
+
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedMealId, setSelectedMealId] = useState(null);
 
   useEffect(() => {
-    const fetchCuisines = async () => {
-      try {
-        const response = await axios.get("https://www.themealdb.com/api/json/v1/1/search.php?s=");
-        setMeals(response.data.meals || []);
-      } catch (err) {
-        setError("Failed to fetch cuisines.");
-      } finally {
-        setLoading(false);
-      }
+    let cancelled = false;
+    axios
+      .get(`${API_BASE}/list.php?c=list`)
+      .then((res) => {
+        if (cancelled) return;
+        setCategories((res.data.meals || []).map((m) => m.strCategory));
+      })
+      .catch(() => {
+        /* non-fatal */
+      });
+    return () => {
+      cancelled = true;
     };
-    fetchCuisines();
   }, []);
 
-  if (loading) return <Loader />;
-  if (error) return <p className="text-center text-red-500">{error}</p>;
+  const fetchMeals = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = debouncedQuery.trim()
+        ? `${API_BASE}/search.php?s=${encodeURIComponent(debouncedQuery.trim())}`
+        : `${API_BASE}/filter.php?c=${encodeURIComponent(category)}`;
+      const res = await axios.get(url);
+      setMeals(res.data.meals || []);
+    } catch (err) {
+      setError("Failed to fetch cuisines.");
+      setMeals([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedQuery, category]);
+
+  useEffect(() => {
+    fetchMeals();
+  }, [fetchMeals]);
+
+  const heading = useMemo(() => {
+    if (debouncedQuery.trim()) return `Results for "${debouncedQuery.trim()}"`;
+    return `${category} Dishes`;
+  }, [debouncedQuery, category]);
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">🍽️ World Cuisines</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {meals.map((meal, index) => (
-          <motion.div
-            key={index}
-            className="bg-white rounded-lg shadow-md overflow-hidden"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+    <main className="max-w-6xl mx-auto p-4">
+      <h1 className="text-3xl font-bold text-center mb-6">World Cuisines</h1>
+
+      <form
+        role="search"
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col sm:flex-row gap-3 mb-6"
+      >
+        <div className="flex-1">
+          <label htmlFor="cuisine-search" className="sr-only">
+            Search dishes
+          </label>
+          <input
+            id="cuisine-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search dishes (e.g. Arrabiata)"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+        </div>
+        <div>
+          <label htmlFor="cuisine-category" className="sr-only">
+            Filter by category
+          </label>
+          <select
+            id="cuisine-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={!!debouncedQuery.trim()}
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50"
           >
-            <img
-              src={meal.strMealThumb || "https://via.placeholder.com/128x128?text=No+Image"}
-              alt={meal.strMeal}
-              className="w-full h-56 object-cover"
+            {categories.length === 0 && <option value={category}>{category}</option>}
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </form>
+
+      <h2 className="text-xl font-semibold mb-4" aria-live="polite">
+        {heading}
+      </h2>
+
+      {loading && <Loader />}
+      {!loading && error && <ErrorState message={error} onRetry={fetchMeals} />}
+      {!loading && !error && meals.length === 0 && <EmptyState />}
+      {!loading && !error && meals.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {meals.map((meal) => (
+            <MealCard
+              key={meal.idMeal}
+              meal={meal}
+              onSelect={(m) => setSelectedMealId(m.idMeal)}
             />
-            <div className="p-4">
-              <h2 className="text-xl font-semibold">{meal.strMeal || "Unknown Dish"}</h2>
-              <p className="text-gray-600 text-sm">Category: {meal.strCategory || "N/A"}</p>
-              <a
-                href={meal.strSource || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-500 text-sm hover:underline mt-2 block"
-              >
-                View Recipe
-              </a>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      )}
+
+      {selectedMealId && (
+        <MealModal
+          mealId={selectedMealId}
+          onClose={() => setSelectedMealId(null)}
+        />
+      )}
+    </main>
   );
 };
 
