@@ -1,99 +1,33 @@
-# Cuisines Child App Microfrontend
+# Cuisines · Micro Frontend remote
 
-This repository contains the **Cuisines Child App**, designed as a microfrontend in a larger application architecture. It is built using **React**, **Tailwind CSS**, and the **Module Federation Plugin** for Webpack, and configured with **CRACO** for custom configuration.
+Browse world dishes by category, search recipes and open full ingredient lists. A CRA 5 + CRACO 7 app exposed as a webpack Module Federation remote for the [micro-frontend host](https://github.com/rk4rohankumar/micro-frontend-host); it also runs standalone.
 
-## Features
-- Developed as a microfrontend for seamless integration with a parent application.
-- Built with modern technologies like React and Tailwind CSS.
-- Module Federation for dynamic sharing of code between apps.
-- Responsive and optimized for performance.
+**Live:** https://cuisines-child-app.vercel.app/
 
-## Tech Stack
-- **React**: Frontend library for building user interfaces.
-- **Tailwind CSS**: Utility-first CSS framework for styling.
-- **CRACO (Create React App Configuration Override)**: For extending CRA configuration.
-- **Webpack Module Federation**: For microfrontend architecture.
+## Data
 
-## Project Setup
+[TheMealDB](https://www.themealdb.com/api.php) public API (`https://www.themealdb.com/api/json/v1/1`, no key):
 
-### Prerequisites
-- Node.js (>= 14.x)
-- npm or yarn package manager
+- `list.php?c=list` — categories
+- `filter.php?c=<category>` / `search.php?s=<query>` — meal grid
+- `lookup.php?i=<id>` — recipe detail (modal)
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/rk4rohankumar/cuisines-child-app.git
-   cd cuisines-child-app
-   ```
+Cards use the small `<strMealThumb>/preview` variant; the modal loads the full image.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+## Run
 
-### Running the Application
-To start the development server:
 ```bash
-npm start
-# or
-yarn start
-```
-The app will be accessible at [http://localhost:3000](http://localhost:3000).
-
-### Building for Production
-To create a production build:
-```bash
-npm run build
-# or
-yarn build
+npm install
+npm start          # http://localhost:3000 (standalone)
+npm run build      # production build in build/, publicPath 'auto'
 ```
 
-### Configuration Details
-#### CRACO and Webpack
-The project uses **CRACO** to customize the Webpack configuration for supporting Module Federation:
-- **publicPath**: Set to `https://cuisines-child-app.vercel.app/` for deployment.
-- **Module Federation Plugin**:
-  - Name: `CuisinesApp`
-  - Remote Entry: `remoteEntry.js`
-  - Exposes: `./CuisinesApp` from `./src/App`
-  - Shared Dependencies: `react`, `react-dom`, and `tailwindcss`
+## How the host consumes it
 
-### Deployment
-The app is deployed at: [https://cuisines-child-app.vercel.app/](https://cuisines-child-app.vercel.app/)
+- Remote name: `CuisinesApp`
+- Remote entry: `https://cuisines-child-app.vercel.app/remoteEntry.js`
+- Exposed module: `./CuisinesApp` → `src/App` (default export, a React component)
 
-## Microfrontend Integration
-To consume this microfrontend in a parent application, include the following in your Module Federation configuration:
-```javascript
-new ModuleFederationPlugin({
-  remotes: {
-    CuisinesApp: 'CuisinesApp@https://cuisines-child-app.vercel.app/remoteEntry.js',
-  },
-})
-```
+The host injects `remoteEntry.js` at runtime, calls `container.init(__webpack_share_scopes__.default)` and then `container.get('./CuisinesApp')`.
 
-## Scripts
-- `start`: Starts the development server.
-- `build`: Builds the app for production.
-- `test`: Runs tests.
-- `eject`: Ejects the CRA configuration.
-
-## Folder Structure
-```
-cuisines-child-app/
-├── src/
-│   ├── components/   # Reusable components
-│   ├── App.js         # Main App component
-│   └── index.js       # Entry point
-├── public/            # Static files
-├── craco.config.js    # Custom configuration for Webpack
-└── package.json       # Project metadata and dependencies
-```
-
-## Contribution Guidelines
-Feel free to fork the repository and submit pull requests for any enhancements or bug fixes.
-
-## License
-This project is licensed under the [MIT License](LICENSE).
+`react`, `react-dom`, `framer-motion` and `axios` are declared `singleton` shared modules with `requiredVersion` from `package.json`, so the remote reuses the host's copies instead of loading its own. The entry is bootstrapped asynchronously (`src/index.js` → `import('./bootstrap')`) so those shared modules can be negotiated before React renders.

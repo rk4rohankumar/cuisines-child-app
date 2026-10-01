@@ -1,41 +1,55 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { onImageError, previewThumb } from "../lib/image";
 
 const MealCard = ({ meal, onSelect }) => {
   const reduced = useReducedMotion();
+  const name = meal.strMeal || "Unknown dish";
   return (
-    <motion.button
-      type="button"
-      onClick={() => onSelect(meal)}
-      className="text-left bg-white rounded-lg shadow-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-red-400"
+    <motion.article
+      className="bg-white rounded-lg shadow-md overflow-hidden"
       initial={reduced ? false : { opacity: 0, scale: 0.95 }}
       animate={reduced ? undefined : { opacity: 1, scale: 1 }}
       transition={{ duration: reduced ? 0 : 0.3 }}
     >
-      <img
-        src={meal.strMealThumb || "https://via.placeholder.com/400x300?text=No+Image"}
-        alt={meal.strMeal || "Dish image"}
-        loading="lazy"
-        decoding="async"
-        className="w-full h-56 object-cover"
-      />
-      <div className="p-4">
-        <h2 className="text-xl font-semibold">{meal.strMeal || "Unknown Dish"}</h2>
-        {meal.strCategory && (
-          <p className="text-gray-600 text-sm">Category: {meal.strCategory}</p>
-        )}
+      <button
+        type="button"
+        onClick={() => onSelect(meal)}
+        aria-label={`Open recipe for ${name}`}
+        className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+      >
+        <div className="aspect-[4/3] w-full bg-gray-100">
+          <img
+            src={previewThumb(meal.strMealThumb)}
+            alt={name}
+            width="400"
+            height="300"
+            loading="lazy"
+            decoding="async"
+            onError={onImageError}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="p-4 pb-0">
+          <h3 className="text-xl font-semibold">{name}</h3>
+          {meal.strCategory && (
+            <p className="text-gray-600 text-sm">Category: {meal.strCategory}</p>
+          )}
+        </div>
+      </button>
+      <div className="px-4 pb-4 pt-2">
         {meal.strSource && (
           <a
             href={meal.strSource}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-red-500 text-sm hover:underline mt-2 inline-block"
+            aria-label={`View recipe source for ${name} (opens in a new tab)`}
+            className="text-red-700 text-sm hover:underline inline-block"
           >
             View Recipe
           </a>
         )}
       </div>
-    </motion.button>
+    </motion.article>
   );
 };
 

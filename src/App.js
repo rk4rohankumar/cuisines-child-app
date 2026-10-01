@@ -65,8 +65,10 @@ const CuisinesPage = () => {
   }, [debouncedQuery, category]);
 
   return (
-    <main className="max-w-6xl mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">World Cuisines</h1>
+    <section aria-labelledby="cuisines-heading" className="max-w-6xl mx-auto p-4">
+      <h1 id="cuisines-heading" className="text-3xl font-bold text-center mb-6">
+        World Cuisines
+      </h1>
 
       <form
         role="search"
@@ -132,7 +134,7 @@ const CuisinesPage = () => {
           onClose={() => setSelectedMealId(null)}
         />
       )}
-    </main>
+    </section>
   );
 };
 
