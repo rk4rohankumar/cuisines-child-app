@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Loader from "./Loader";
 import ErrorState from "./ErrorState";
+import { onImageError } from "../lib/image";
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const getIngredients = (meal) => {
   const out = [];
@@ -25,11 +29,17 @@ const MealModal = ({ mealId, onClose }) => {
   const [meal, setMeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const dialogRef = useRef(null);
   const closeBtnRef = useRef(null);
   const prevFocusRef = useRef(null);
+  const onCloseRef = useRef(onClose);
   const titleId = "meal-modal-title";
 
-  const load = async () => {
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -42,44 +52,74 @@ const MealModal = ({ mealId, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mealId]);
 
   useEffect(() => {
-    prevFocusRef.current = document.activeElement;
     load();
+  }, [load]);
+
+  // Focus management: remember the opener, move focus into the dialog, trap Tab,
+  // close on Escape, and hand focus back to the opener on unmount.
+  useEffect(() => {
+    prevFocusRef.current = document.activeElement;
+    closeBtnRef.current?.focus();
+
     const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const nodes = dialogRef.current.querySelectorAll(FOCUSABLE);
+      if (nodes.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      const active = document.activeElement;
+      if (!dialogRef.current.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
+
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = originalOverflow;
-      if (prevFocusRef.current && prevFocusRef.current.focus) {
-        prevFocusRef.current.focus();
+      const prev = prevFocusRef.current;
+      if (prev && typeof prev.focus === "function" && document.contains(prev)) {
+        prev.focus();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mealId]);
-
-  useEffect(() => {
-    if (!loading && closeBtnRef.current) closeBtnRef.current.focus();
-  }, [loading]);
+  }, []);
 
   const ingredients = meal ? getIngredients(meal) : [];
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex items-start justify-between p-4 border-b sticky top-0 bg-white">
           <h2 id={titleId} className="text-2xl font-bold pr-4">
             {meal ? meal.strMeal : "Recipe"}
@@ -101,13 +141,18 @@ const MealModal = ({ mealId, onClose }) => {
           {!loading && !error && meal && (
             <>
               {meal.strMealThumb && (
-                <img
-                  src={meal.strMealThumb}
-                  alt={meal.strMeal}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-64 object-cover rounded-md mb-4"
-                />
+                <div className="aspect-[16/9] w-full bg-gray-100 rounded-md overflow-hidden mb-4">
+                  <img
+                    src={meal.strMealThumb}
+                    alt={meal.strMeal}
+                    width="700"
+                    height="394"
+                    loading="lazy"
+                    decoding="async"
+                    onError={onImageError}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               )}
               <div className="text-sm text-gray-600 mb-4">
                 {meal.strCategory && <span className="mr-3">Category: {meal.strCategory}</span>}
@@ -138,7 +183,7 @@ const MealModal = ({ mealId, onClose }) => {
                     href={toYouTubeEmbed(meal.strYoutube)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-red-600 hover:underline"
+                    className="text-red-700 hover:underline"
                   >
                     Watch on YouTube
                   </a>
@@ -148,7 +193,7 @@ const MealModal = ({ mealId, onClose }) => {
                     href={meal.strSource}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-red-600 hover:underline"
+                    className="text-red-700 hover:underline"
                   >
                     View Recipe Source
                   </a>
