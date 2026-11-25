@@ -118,9 +118,9 @@ const MealModal = ({ mealId, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-[var(--mfe-surface,#ffffff)] rounded-[var(--mfe-radius,12px)] shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-start justify-between p-4 border-b sticky top-0 bg-white">
+        <div className="flex items-start justify-between p-4 border-b sticky top-0 bg-[var(--mfe-surface,#ffffff)]">
           <h2 id={titleId} className="text-2xl font-bold pr-4">
             {meal ? meal.strMeal : "Recipe"}
           </h2>
@@ -141,7 +141,7 @@ const MealModal = ({ mealId, onClose }) => {
           {!loading && !error && meal && (
             <>
               {meal.strMealThumb && (
-                <div className="aspect-[16/9] w-full bg-gray-100 rounded-md overflow-hidden mb-4">
+                <div className="aspect-[16/9] w-full bg-[var(--mfe-sunken,#f8fafc)] rounded-md overflow-hidden mb-4">
                   <img
                     src={meal.strMealThumb}
                     alt={meal.strMeal}
@@ -154,7 +154,7 @@ const MealModal = ({ mealId, onClose }) => {
                   />
                 </div>
               )}
-              <div className="text-sm text-gray-600 mb-4">
+              <div className="text-sm text-[color:var(--mfe-muted,#475569)] mb-4">
                 {meal.strCategory && <span className="mr-3">Category: {meal.strCategory}</span>}
                 {meal.strArea && <span>Cuisine: {meal.strArea}</span>}
               </div>
@@ -162,7 +162,7 @@ const MealModal = ({ mealId, onClose }) => {
               {ingredients.length > 0 && (
                 <section className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Ingredients</h3>
-                  <ul className="list-disc list-inside space-y-1 text-gray-800">
+                  <ul className="list-disc list-inside space-y-1 text-[color:var(--mfe-ink,#0f172a)]">
                     {ingredients.map((ing, i) => (
                       <li key={`${mealId}-ing-${i}`}>{ing}</li>
                     ))}
@@ -173,7 +173,7 @@ const MealModal = ({ mealId, onClose }) => {
               {meal.strInstructions && (
                 <section className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Instructions</h3>
-                  <p className="whitespace-pre-line text-gray-800">{meal.strInstructions}</p>
+                  <p className="whitespace-pre-line text-[color:var(--mfe-ink,#0f172a)]">{meal.strInstructions}</p>
                 </section>
               )}
 
@@ -202,7 +202,7 @@ const MealModal = ({ mealId, onClose }) => {
             </>
           )}
           {!loading && !error && !meal && (
-            <p className="text-gray-600">Recipe not found.</p>
+            <p className="text-[color:var(--mfe-muted,#475569)]">Recipe not found.</p>
           )}
         </div>
       </div>
