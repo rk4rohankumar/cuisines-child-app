@@ -6,7 +6,7 @@ const MealCard = ({ meal, onSelect }) => {
   const name = meal.strMeal || "Unknown dish";
   return (
     <motion.article
-      className="bg-white rounded-lg shadow-md overflow-hidden"
+      className="bg-[var(--mfe-surface,#ffffff)] rounded-[var(--mfe-radius,12px)] shadow-sm overflow-hidden"
       initial={reduced ? false : { opacity: 0, scale: 0.95 }}
       animate={reduced ? undefined : { opacity: 1, scale: 1 }}
       transition={{ duration: reduced ? 0 : 0.3 }}
@@ -17,7 +17,7 @@ const MealCard = ({ meal, onSelect }) => {
         aria-label={`Open recipe for ${name}`}
         className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
       >
-        <div className="aspect-[4/3] w-full bg-gray-100">
+        <div className="aspect-[4/3] w-full bg-[var(--mfe-sunken,#f8fafc)]">
           <img
             src={previewThumb(meal.strMealThumb)}
             alt={name}
@@ -32,7 +32,7 @@ const MealCard = ({ meal, onSelect }) => {
         <div className="p-4 pb-0">
           <h3 className="text-xl font-semibold">{name}</h3>
           {meal.strCategory && (
-            <p className="text-gray-600 text-sm">Category: {meal.strCategory}</p>
+            <p className="text-[color:var(--mfe-muted,#475569)] text-sm">Category: {meal.strCategory}</p>
           )}
         </div>
       </button>

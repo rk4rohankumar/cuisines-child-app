@@ -66,7 +66,8 @@ const CuisinesPage = () => {
 
   return (
     <section aria-labelledby="cuisines-heading" className="max-w-6xl mx-auto p-4">
-      <h1 id="cuisines-heading" className="text-3xl font-bold text-center mb-6">
+      <p className="text-xs font-medium uppercase tracking-widest text-[color:var(--mfe-accent,#047857)]">Cuisines remote</p>
+      <h1 id="cuisines-heading" className="mt-1 mb-6 text-2xl font-semibold text-[color:var(--mfe-ink,#0f172a)]">
         World Cuisines
       </h1>
 
@@ -85,7 +86,7 @@ const CuisinesPage = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search dishes (e.g. Arrabiata)"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
+            className="w-full px-4 py-2 border border-[color:var(--mfe-border,#e2e8f0)] rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
           />
         </div>
         <div>
@@ -97,7 +98,7 @@ const CuisinesPage = () => {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             disabled={!!debouncedQuery.trim()}
-            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-2 border border-[color:var(--mfe-border,#e2e8f0)] rounded-md bg-[var(--mfe-surface,#ffffff)] focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50"
           >
             {categories.length === 0 && <option value={category}>{category}</option>}
             {categories.map((c) => (
